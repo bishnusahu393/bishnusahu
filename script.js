@@ -165,23 +165,144 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ----------------------------------------------------------------------
+    // Scroll Spy & Smooth Navigation
+    // ----------------------------------------------------------------------
+    const desktopNavLinks = document.querySelectorAll(".desktop-nav .nav-link");
+    const mobileNavLinks = document.querySelectorAll(".mobile-nav-list .mobile-nav-link");
+    const allNavLinks = [...desktopNavLinks, ...mobileNavLinks];
+    const header = document.querySelector(".site-header");
+
+    // Sections tracked by the navbar
+    const sectionIds = ["hero", "about", "experience", "formula", "skills", "contact"];
+    const sections = sectionIds
+        .map(id => document.getElementById(id))
+        .filter(el => el !== null);
+
+    let isManualScrolling = false;
+    let manualScrollTimeout = null;
+
+    // Function to set the active link across desktop and mobile nav
+    function setActiveNavLink(targetId) {
+        if (!targetId) return;
+        const cleanId = targetId.replace(/^#/, "");
+
+        allNavLinks.forEach(link => {
+            const href = link.getAttribute("href");
+            if (href && href.replace(/^#/, "") === cleanId) {
+                link.classList.add("active");
+            } else {
+                link.classList.remove("active");
+            }
+        });
+    }
+
+    // Determine the active section based on current scroll position
+    function getActiveSectionId() {
+        const scrollY = window.scrollY || window.pageYOffset;
+        const headerHeight = header ? header.offsetHeight : 70;
+        const triggerLine = headerHeight + 60; // Point just below the navbar
+
+        // Top of page check
+        if (scrollY < 100) {
+            return "hero";
+        }
+
+        // Bottom of page check (ensures contact is active when scrolled to bottom)
+        const scrollBottom = window.innerHeight + scrollY;
+        const pageHeight = document.documentElement.scrollHeight;
+        if (scrollBottom >= pageHeight - 40) {
+            return "contact";
+        }
+
+        // Check sections in reverse order (bottom to top)
+        for (let i = sections.length - 1; i >= 0; i--) {
+            const sec = sections[i];
+            const rect = sec.getBoundingClientRect();
+            // If the top of the section has reached or crossed the trigger line
+            if (rect.top <= triggerLine) {
+                return sec.id;
+            }
+        }
+
+        return "hero";
+    }
+
+    let isTicking = false;
+    function updateScrollSpy() {
+        if (isManualScrolling) return;
+
+        const currentActiveId = getActiveSectionId();
+        setActiveNavLink(currentActiveId);
+    }
+
+    function onScroll() {
+        if (!isTicking) {
+            window.requestAnimationFrame(() => {
+                updateScrollSpy();
+                isTicking = false;
+            });
+            isTicking = true;
+        }
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", updateScrollSpy, { passive: true });
+
+    // Initial check on load
+    setActiveNavLink("hero");
+    updateScrollSpy();
+
+    // ----------------------------------------------------------------------
     // Smooth Scrolling with Fixed Navbar Offset
     // ----------------------------------------------------------------------
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener("click", function (e) {
-            const targetId = this.getAttribute("href");
-            if (targetId && targetId !== "#") {
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    e.preventDefault();
-                    const headerOffset = 80;
-                    const elementPosition = targetElement.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                    });
-                }
+            const targetHref = this.getAttribute("href");
+            if (!targetHref) return;
+
+            if (targetHref === "#" || targetHref === "#hero") {
+                e.preventDefault();
+                isManualScrolling = true;
+                clearTimeout(manualScrollTimeout);
+                setActiveNavLink("hero");
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+
+                manualScrollTimeout = setTimeout(() => {
+                    isManualScrolling = false;
+                    updateScrollSpy();
+                }, 800);
+                return;
+            }
+
+            const targetElement = document.querySelector(targetHref);
+            if (targetElement) {
+                e.preventDefault();
+                const targetId = targetHref.replace(/^#/, "");
+
+                // Immediately activate the clicked navbar item
+                setActiveNavLink(targetId);
+
+                // Lock scroll spy while smooth scrolling
+                isManualScrolling = true;
+                clearTimeout(manualScrollTimeout);
+
+                const headerHeight = header ? header.offsetHeight : 70;
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+
+                window.scrollTo({
+                    top: Math.max(0, offsetPosition),
+                    behavior: "smooth"
+                });
+
+                manualScrollTimeout = setTimeout(() => {
+                    isManualScrolling = false;
+                    updateScrollSpy();
+                }, 800);
             }
         });
     });

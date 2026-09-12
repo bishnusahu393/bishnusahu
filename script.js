@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Lock scroll
     document.body.classList.add("is-loading");
 
-    const DURATION = 2000; // 3 seconds exactly
+    const DURATION = 1000; // 3 seconds exactly
 
     // Smoothly animate the progress bar
     const startTime = performance.now();
@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Close on window resize if scaled above mobile breakpoint
         window.addEventListener("resize", () => {
-            if (window.innerWidth >= 860) {
+            if (window.innerWidth >= 1024) {
                 closeMobileMenu();
             }
         });
@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.querySelector(".site-header");
 
     // Sections tracked by the navbar
-    const sectionIds = ["hero", "about", "experience", "formula", "skills", "contact"];
+    const sectionIds = ["hero", "about", "experience", "internships", "formula", "skills", "certifications", "contact"];
     const sections = sectionIds
         .map(id => document.getElementById(id))
         .filter(el => el !== null);
